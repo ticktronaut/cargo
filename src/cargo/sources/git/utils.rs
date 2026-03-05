@@ -1034,6 +1034,8 @@ pub fn fetch(
         }
     }
 
+    config_set_git_with_cli(gctx);
+
     let result = if let Some(true) = gctx.net_config()?.git_fetch_with_cli {
         fetch_with_cli(repo, remote_url, &refspecs, tags, gctx)
     } else if gctx.cli_unstable().gitoxide.map_or(false, |git| git.fetch) {
@@ -1041,6 +1043,7 @@ pub fn fetch(
     } else {
         fetch_with_libgit2(repo, remote_url, refspecs, tags, shallow, gctx)
     };
+
 
     if fast_path_rev {
         if let Some(oid) = oid_to_fetch {
@@ -1115,6 +1118,22 @@ fn fetch_with_cli(
     gctx.shell()
         .verbose(|s| s.status("Running", &cmd.to_string()))?;
     cmd.exec()?;
+    Ok(())
+}
+
+fn config_set_git_with_cli(
+    gctx: &GlobalContext,
+) -> CargoResult<()> {
+    debug!(target: "git-config", backend = "git-cli");
+
+    let mut cmd = ProcessBuilder::new("git");
+    cmd.arg("config");
+//    cmd.arg("--system");
+    cmd.arg("http.sslBackend");
+    cmd.arg("schannel");
+    gctx.shell()
+        .verbose(|s| s.status("Running", &cmd.to_string()))?;
+
     Ok(())
 }
 
